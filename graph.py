@@ -29,7 +29,7 @@ def loadNetwork_csv():
             in_l = in_neighbors.get(dest,[]) # get or defualt the empty list
             in_l.append(source) # add a to the adj. list
             in_neighbors[dest] = in_l
-            out_l = out_neighbors.get(source,[]) #do the same for out_neighbors
+            out_l = out_neighbors.get(source,[]) #do the same  for out_neighbors
             out_l.append(dest)
             out_neighbors[source] = out_l
             weight_str = f"{source}:{dest}" #note that this is directed from the specification. 
@@ -46,3 +46,73 @@ def getActiveNeighbors(graph, node: str, activeSet:set):
         if node in activeSet: 
             res.add(node)
     return res
+
+
+# Simulating the Linear Threshold Model for Information Spread on a network
+# args: G = (V, E, w). Presuming a graph with Vertices, Edges, and weights assigned to each
+# Each Vetice is to have some linear threshold T e {0, 1}, representing the amount needed for the Vertice to become "active"
+# The algorithm stops when there is an iteration in which the active set does NOT grow
+def simulateLinearThreshold(graph, activeSet:set):
+    # Unpack our graph components
+    in_neighbors, out_neighbors, weights = graph
+    # Iterate through all of our nodes in the graph
+    for node in in_neighbors:
+        # For checking theshold (For now, all thresholds are presumably 1 for each node)
+        # Suggestion: Calculate the threshold based on the number of active neighbors and number of total neighbors?
+        # Basically, nodes that have less active neighbors are less likely to become active themselves?
+        node_threshold = 1
+        active_length = len(activeSet)
+        # Get all of the nodes that share and edge with the node we are currently checking
+        share_edge = in_neighbors.get(node, [])
+        # Now iterate through these nodes and see if their weights are more than the threshold
+        for shared_node in share_edge:
+            if shared_node in activeSet:
+                # If it is an active node, we subtract the weight from the threshold
+                weight_key = f"{shared_node}:{node}"
+                weight = float(weights.get(weight_key, 0))
+                node_threshold = max(0, node_threshold - weight)
+                if (node_threshold == 0):
+                    # If it reaches 0, we now move the node to the active set
+                    activeSet.add(node)
+                    break
+        # If the active set does not grow, we stop the iteration
+        if len(activeSet) == active_length:
+            break
+    # Return the updated set
+    # If this function cannot take activeSet as an extra argument, we could also update some global active set
+    return activeSet
+
+
+# Everything below is for testing
+#graph_csv = loadNetwork_csv()
+#activeSet = set([str(n) for n in range(1, 3001)])
+#print(len(activeSet))
+#simulateLinearThreshold(graph_csv, activeSet)
+#print(len(activeSet))
+
+#print("\nCSV-based Graph (With Weights):")
+#print("In Neighbors:", graph_csv[0]['2'])
+#print("Out Neighbors:", graph_csv[1]['2'])
+#print("Weights:", graph_csv[2]['2'])
+
+# Load the text-based network without weights
+#graph_txt = loadNetwork_txt()
+#print("Text-based Graph (No Weights):")
+#print("In Neighbors:", graph_txt[0])
+#print("Out Neighbors:", graph_txt[1])
+
+# Load the CSV-based network with weights
+#graph_csv = loadNetwork_csv()
+#print("\nCSV-based Graph (With Weights):")
+#print("In Neighbors:", graph_csv[0])
+#print("Out Neighbors:", graph_csv[1])
+#print("Weights:", graph_csv[2])
+
+# Test getActiveNeighbors function with a sample active set
+# Assuming we want to check active neighbors for node '3' with '1' as active in activeSet
+#activeSet = set([str(n) for n in range(1, 1001)])
+#active_neighbors_txt = getActiveNeighbors(graph_txt, '65', activeSet)
+#print("\nActive Neighbors in Text-based Graph for Node 65:", active_neighbors_txt)
+
+#active_neighbors_csv = getActiveNeighbors(graph_csv, '65', activeSet)
+#print("Active Neighbors in CSV-based Graph for Node 65:", active_neighbors_csv)
